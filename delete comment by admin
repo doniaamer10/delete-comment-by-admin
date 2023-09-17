@@ -1,0 +1,54 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+
+const app = express();
+const port = 3000;
+
+// Connect to your MongoDB database
+mongoose.connect('mongodb://localhost/instagram_clone', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+// Define a Comment schema and model
+const commentSchema = new mongoose.Schema({
+  text: String,
+  userId: String, // User ID of the comment author
+  isAdmin: Boolean, // True if the commenter is an admin
+});
+
+const Comment = mongoose.model('Comment', commentSchema);
+
+// Middleware for parsing JSON requests
+app.use(bodyParser.json());
+
+// Endpoint to delete a comment by its ID
+app.delete('/comments/:commentId', (req, res) => {
+  const { commentId } = req.params;
+
+  // Check if the user is an admin (you should have your own authentication logic here)
+  const isAdmin = true; // Replace this with your admin authentication logic
+
+  if (!isAdmin) {
+    return res.status(403).json({ message: 'Unauthorized' });
+  }
+
+  // Delete the comment
+  Comment.findByIdAndRemove(commentId, (err, deletedComment) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    if (!deletedComment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    res.status(204).end(); // Successful deletion, no content response
+  });
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
